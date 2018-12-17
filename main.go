@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"github.com/Deansquirrel/go-tool"
 	"github.com/Deansquirrel/goMssqlDemo/global"
 	_ "github.com/denisenkom/go-mssqldb"
@@ -16,15 +15,12 @@ func main() {
 	defer fmt.Println("程序退出")
 
 	//读取配置文件
-	var config global.SysConfig
-	_, err := toml.DecodeFile("config.toml", &config)
+	config, err := global.GetConfig("config.toml")
 	if err != nil {
-		msg := "配置文件读取失败\n" + err.Error()
-		fmt.Println(msg)
-		go_tool.Log(msg)
+		global.PrintAndLog(err.Error())
+		return
 	}
 
-	var isDebug = true
 	var server = config.MsSqlConfig.Server
 	var port = config.MsSqlConfig.Port
 	var user = config.MsSqlConfig.User
@@ -33,9 +29,6 @@ func main() {
 
 	//连接字符串
 	connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", server, database, user, password, port)
-	if isDebug {
-		fmt.Println(connString)
-	}
 
 	//建立连接
 	conn, err := sql.Open("mssql", connString)
@@ -43,7 +36,6 @@ func main() {
 		log.Fatal("Open Connection failed:", err.Error())
 	}
 	defer conn.Close()
-
 	//产生查询语句的Statement
 	stmt, err := conn.Prepare(`SELECT * FROM Authorization_info`)
 	if err != nil {

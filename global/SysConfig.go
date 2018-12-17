@@ -1,5 +1,7 @@
 package global
 
+import "fmt"
+
 type SysConfig struct {
 	MsSqlConfig mssqlConfig `toml:"mssql"`
 }
@@ -10,4 +12,16 @@ type mssqlConfig struct {
 	User     string `toml:"user"`
 	Password string `toml:"password"`
 	Database string `toml:"database"`
+}
+
+func (config SysConfig) PrintFormat() {
+	fmt.Println("============================================")
+	fmt.Println("Config Format")
+	fmt.Println(`[mssql]
+server=""
+port=
+user=""
+password=""
+database=""`)
+	fmt.Println("============================================")
 }
