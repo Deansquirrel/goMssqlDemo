@@ -12,7 +12,7 @@ func GetConfig(fileName string) (config SysConfig, err error) {
 	if err != nil {
 		currPath = ""
 	} else {
-		currPath = currPath + fileName
+		currPath = currPath + "\\" + fileName
 	}
 	b, err := go_tool.PathExists(currPath)
 	if err != nil {
