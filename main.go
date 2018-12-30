@@ -1,93 +1,47 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/Deansquirrel/go-tool"
+	"github.com/Deansquirrel/goMssqlDemo/common"
+	"github.com/Deansquirrel/goMssqlDemo/dbOpr"
 	"github.com/Deansquirrel/goMssqlDemo/global"
-	_ "github.com/denisenkom/go-mssqldb"
-	"log"
-	"time"
 )
 
 func main() {
 	fmt.Println("程序启动")
 	defer fmt.Println("程序退出")
 
-	//读取配置文件
-	config, err := global.GetConfig("config.toml")
+	err := refreshConfig()
 	if err != nil {
-		global.PrintAndLog(err.Error())
+		common.PrintAndLog(err.Error())
 		return
 	}
 
-	var server = config.MsSqlConfig.Server
-	var port = config.MsSqlConfig.Port
-	var user = config.MsSqlConfig.User
-	var password = config.MsSqlConfig.Password
-	var database = config.MsSqlConfig.Database
-
-	//连接字符串
-	connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", server, database, user, password, port)
-
-	//建立连接
-	conn, err := sql.Open("mssql", connString)
+	err = dbOpr.Select()
 	if err != nil {
-		log.Fatal("Open Connection failed:", err.Error())
+		common.PrintAndLog(err.Error())
 	}
-	defer conn.Close()
-	//产生查询语句的Statement
-	stmt, err := conn.Prepare(`SELECT * FROM Authorization_info`)
+
+	err = dbOpr.MultipleCommand()
 	if err != nil {
-		log.Fatal("Prepare failed:", err.Error())
-	}
-	defer stmt.Close()
-
-	//通过Statement执行查询
-	rows, err := stmt.Query()
-	if err != nil {
-		log.Fatal("Query failed:", err.Error())
+		common.PrintAndLog(err.Error())
 	}
 
-	//建立一个列数组
-	cols, err := rows.Columns()
-	var colsdata = make([]interface{}, len(cols))
-	for i := 0; i < len(cols); i++ {
-		colsdata[i] = new(interface{})
-		fmt.Print(cols[i])
-		fmt.Print("\t")
-	}
-	fmt.Println()
-
-	//遍历每一行
-	for rows.Next() {
-		rows.Scan(colsdata...) //将查到的数据写入到这行中
-		PrintRow(colsdata)     //打印此行
-	}
-	defer rows.Close()
 }
 
-//打印一行记录，传入一个行的所有列信息
-func PrintRow(colsdata []interface{}) {
-	for _, val := range colsdata {
-		switch v := (*(val.(*interface{}))).(type) {
-		case nil:
-			fmt.Print("NULL")
-		case bool:
-			if v {
-				fmt.Print("True")
-			} else {
-				fmt.Print("False")
-			}
-		case []byte:
-			fmt.Print(string(v))
-		case time.Time:
-			//fmt.Print(v.Format("2016-01-02 15:05:05.999"))
-			fmt.Print(go_tool.GetDateTimeStr(v))
-		default:
-			fmt.Print(v)
-		}
-		fmt.Print("\t")
+func refreshConfig() (err error) {
+	//读取配置文件
+	global.SysConfig, err = common.GetConfig("config.toml")
+	if err != nil {
+		common.PrintAndLog(err.Error())
+		return
 	}
-	fmt.Println()
+	global.Conn, err = dbOpr.GetDbConn(global.SysConfig.MsSqlConfig.Server, global.SysConfig.MsSqlConfig.Port,
+		global.SysConfig.MsSqlConfig.Database, global.SysConfig.MsSqlConfig.User, global.SysConfig.MsSqlConfig.Password)
+	if err != nil {
+		common.PrintAndLog(err.Error())
+		return
+	}
+
+	return
 }

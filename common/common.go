@@ -1,19 +1,21 @@
-package global
+package common
 
 import (
+	"errors"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/Deansquirrel/go-tool"
-	"github.com/kataras/iris/core/errors"
+	"github.com/Deansquirrel/goMssqlDemo/object"
 )
 
-func GetConfig(fileName string) (config SysConfig, err error) {
+func GetConfig(fileName string) (config object.SysConfig, err error) {
 	currPath, err := go_tool.GetCurrPath()
 	if err != nil {
 		currPath = ""
 	} else {
 		currPath = currPath + "\\" + fileName
 	}
+	fmt.Println(currPath)
 	b, err := go_tool.PathExists(currPath)
 	if err != nil {
 		err = errors.New("配置文件读取失败 - " + err.Error())
