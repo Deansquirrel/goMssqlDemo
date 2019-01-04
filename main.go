@@ -27,6 +27,10 @@ func main() {
 		common.PrintAndLog(err.Error())
 	}
 
+	err = dbOpr.TxCommand()
+	if err != nil {
+		common.PrintAndLog(err.Error())
+	}
 }
 
 func refreshConfig() (err error) {
