@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var DbConnStrFormat = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s" //;Network=DbMsSoCn;"
+var DbConnStrFormat = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;Network=DbMsSoCn;"
 
 //根据配置获取数据库连接
 func GetDbConn(server string, port int, dbName string, user string, pwd string) (*sql.DB, error) {

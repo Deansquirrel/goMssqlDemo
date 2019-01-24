@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/Deansquirrel/go-tool"
 	"github.com/Deansquirrel/goMssqlDemo/common"
 	"github.com/Deansquirrel/goMssqlDemo/global"
-	"github.com/Deansquirrel/goZlDianzqOfferTicket/repository"
-	"time"
+	"github.com/Deansquirrel/goZlDianzqOfferTicketV3/repository"
 )
 
 var conn *sql.DB
@@ -27,8 +25,44 @@ func refreshConn() (err error) {
 	return
 }
 
+func GetConn()error{
+	return refreshConn()
+}
+
+func getTestSql()string{
+	sSql := "SELECT * FROM master..SysDatabases"
+	return sSql
+}
+
+func Test()error{
+
+	rows,err := conn.Query(getTestSql())
+	if err != nil {
+		common.PrintAndLog("Query failed:" + err.Error())
+		return err
+	}
+	defer func() {
+		//_ = rows.Close()
+		errLs := rows.Close()
+		if errLs != nil {
+			common.PrintAndLog(errLs.Error())
+		}
+	}()
+
+	cls, err := rows.Columns()
+	if err != nil {
+		common.PrintAndLog("rows close error:" + err.Error())
+		return err
+	}
+	fmt.Println(cls)
+
+	return nil
+}
+
 func Select() (err error) {
-	if !repository.CheckV(conn) {
+	common.PrintAndLog("begin Select")
+	defer common.PrintAndLog("Select Done")
+	if !IsConnValid(conn){
 		err := refreshConn()
 		if err != nil {
 			common.PrintAndLog("RefreshCon error:" + err.Error())
@@ -71,6 +105,7 @@ func Select() (err error) {
 
 func MultipleCommand() error {
 	common.PrintAndLog("begin MultipleCommand")
+	defer common.PrintAndLog("MultipleCommand Done")
 	if !repository.CheckV(conn) {
 		err := refreshConn()
 		if err != nil {
@@ -84,9 +119,6 @@ func MultipleCommand() error {
 		return err
 	}
 
-	common.PrintAndLog("signal Test")
-
-	common.PrintAndLog("Done")
 	return nil
 }
 
@@ -115,37 +147,73 @@ func getDropTempTableSqlStr() string {
 
 func TxCommand() error{
 	common.PrintAndLog("begin TxCommand")
-	if !repository.CheckV(conn) {
-		err := refreshConn()
-		if err != nil {
-			common.PrintAndLog("RefreshCon error:" + err.Error())
-			return err
-		}
-	}
+	defer common.PrintAndLog("TxCommand Done")
 
-	fmt.Println(time.Now().Unix())
-	fmt.Println(time.Now().UnixNano())
-	tx,err := conn.Begin()
+	tabName := "#IISlog20190107"
+
+	db,err := GetDbConn(global.SysConfig.MsSqlConfig.Server,global.SysConfig.MsSqlConfig.Port,global.SysConfig.MsSqlConfig.Database,global.SysConfig.MsSqlConfig.User,global.SysConfig.MsSqlConfig.Password)
 	if err != nil {
 		return err
 	}
 	defer func(){
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			_ = tx.Commit()
+		errLs := db.Close()
+		if errLs != nil {
+			common.PrintAndLog(errLs.Error())
 		}
 	}()
 
-	for i:=0;i<100;i++{
-		_,err = tx.Exec(getInsertStrSql(),go_tool.GetDateTimeStr(time.Now()),1)
-		if err != nil {
-			return err
-		}
+	tx,err := db.Begin()
+	defer func(){
+		_ = tx.Rollback()
+	}()
+
+	sqlStr := "" +
+		"CREATE TABLE " + tabName +
+		"(" +
+		"	[sj] [datetime] not NULL," +
+		"	[ms] [int] not NULL" +
+		") ON [PRIMARY]"
+
+	common.PrintAndLog("Create Table")
+
+	_,err = tx.Exec(sqlStr)
+	if err != nil {
+		return err
+	}
+	common.PrintAndLog("Create Table Done")
+
+	common.PrintAndLog("Search Table")
+	rows,err := tx.Query("" +
+		"SELECT * FROM " + tabName)
+	if err != nil {
+		return err
 	}
 
-	fmt.Println(time.Now().UnixNano())
-	fmt.Println(time.Now().Unix())
+	for rows.Next() {
+
+	}
+	common.PrintAndLog("Search Table Done")
+
+
+	common.PrintAndLog("Drop Table")
+	_,errLs := tx.Exec("" +
+		"Drop table " + tabName)
+	if errLs != nil {
+		common.PrintAndLog(errLs.Error())
+	}
+	common.PrintAndLog("Drop Table Done")
+
+	//
+	//stmt,err := tx.PrepareContext(ctx,getInsertSqlStrModel())
+	//defer func(){
+	//	_ = stmt.Close()
+	//}()
+	//
+	//_,err = stmt.ExecContext(ctx,go_tool.GetDateTimeStr(time.Now()),10)
+	//if err != nil {
+	//	return err
+	//}
+
 	return nil
 }
 

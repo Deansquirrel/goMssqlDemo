@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/Deansquirrel/go-tool"
 	"github.com/Deansquirrel/goMssqlDemo/common"
 	"github.com/Deansquirrel/goMssqlDemo/dbOpr"
 	"github.com/Deansquirrel/goMssqlDemo/global"
+	"time"
 )
 
 func main() {
@@ -17,20 +19,45 @@ func main() {
 		return
 	}
 
-	err = dbOpr.Select()
+	err = dbOpr.GetConn()
 	if err != nil {
 		common.PrintAndLog(err.Error())
+		return
 	}
 
-	err = dbOpr.MultipleCommand()
-	if err != nil {
-		common.PrintAndLog(err.Error())
+	for{
+		common.PrintAndLog(go_tool.GetDateTimeStr(time.Now()))
+		err = dbOpr.Test()
+		if err != nil {
+			common.PrintAndLog(err.Error())
+		}
+		time.Sleep(time.Second * 5)
 	}
 
-	err = dbOpr.TxCommand()
-	if err != nil {
-		common.PrintAndLog(err.Error())
-	}
+	//err = dbOpr3.Select()
+	//if err != nil {
+	//	common.PrintAndLog(err.Error())
+	//}
+	//
+	//err = dbOpr3.MultipleCommand()
+	//if err != nil {
+	//	common.PrintAndLog(err.Error())
+	//}
+
+	//err = dbOpr.Select()
+	//if err != nil {
+	//	common.PrintAndLog(err.Error())
+	//}
+	//
+	//err = dbOpr.MultipleCommand()
+	//if err != nil {
+	//	common.PrintAndLog(err.Error())
+	//}
+	//
+	//err = dbOpr.TxCommand()
+	//if err != nil {
+	//	common.PrintAndLog(err.Error())
+	//}
 }
 
 func refreshConfig() (err error) {
